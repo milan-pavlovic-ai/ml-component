@@ -4,12 +4,14 @@ import os
 import sys
 sys.path.insert(0, os.path.join(os.path.abspath(os.path.dirname(__file__)), '..', '..'))
 
-import io
 import pandas as pd
 
+from typing import Union
 from loguru import logger
 from http import HTTPStatus
 from fastapi.responses import JSONResponse
+
+from src.config import Def, logger
 
 
 class UtilityManager:
@@ -107,6 +109,38 @@ class UtilityManager:
             logger.info(f'Max = {values.max():.2f}')
             logger.info(f'IQR = {(values.quantile(0.75) - values.quantile(0.25)):.2f}')
             return
+
+        class Validator:
+            """Validator utilities"""
+            
+            def validate_feature_value(feature: str, value: Union[str, int, float]) -> bool:
+                """Validate feature value
+
+                Args:
+                    feature (str): Feature name
+                    value (Union[str, int, float]): Feature value
+
+                Raises:
+                    ValueError: If feature is not in the Validator
+
+                Returns:
+                    bool: True if feature value is valid, otherwise False
+                """
+                if feature not in Def.Data.VALIDATOR:
+                    raise ValueError(f"Feature '{feature}' is not valid")
+
+                feature_info = Def.Data.VALIDATOR[feature]
+
+                if feature_info["type"] == "categorical":
+                    is_valid = value in feature_info["values"]
+                
+                elif feature_info["type"] == "numerical":
+                    is_valid = (feature_info["min"] <= value <= feature_info["max"])
+                
+                else:
+                    is_valid = False
+                    
+                return is_valid
 
     class Response:
         """Response utilites"""

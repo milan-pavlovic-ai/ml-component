@@ -1,6 +1,7 @@
 import os
 import sys
 
+import json
 from loguru import logger
 from dotenv import dotenv_values
 
@@ -104,6 +105,9 @@ class Def:
             RAW = os.path.join(MAIN, 'raw')
             PROCESSED = os.path.join(MAIN, 'processed')
             TEMP = os.path.join(MAIN, 'temp')
+            
+        with open(os.path.join(ROOT_DIR, 'src', 'data', 'validator.json'), 'r') as f:
+            VALIDATOR = json.load(f)
         
     class Model:
         """Models"""        
@@ -111,7 +115,6 @@ class Def:
             """Directory"""
             MAIN = os.path.join(ROOT_DIR, 'models')
             PATH = os.path.join(MAIN, config['MODEL_PRICE'], 'model.pkl')
-        
     
     class Label:
         """Labels"""
