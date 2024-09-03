@@ -96,6 +96,8 @@ class Def:
     class DB:
         """Database variables"""
         S3_BUCKET = config['S3_BUCKET']
+        RESPONSE_DIR = 'response'
+        EMPTY = -1
         
     class Data:
         """Data"""
@@ -121,6 +123,10 @@ class Def:
         class API:
             PING_SUCCESSFUL = 'Working!'
             ACCESS_DENIED = 'Authorization: Access denied'
+
+        class Storage:
+            CLEANED_BUCKET = 'All items in the bucket has been deleted!'
+            PREDS_NOT_SAVED = 'Predictions are not saved in S3'
 
         class Model:
             NOT_LOADED_OR_TRAINED = 'Model is not loaded or trained'
