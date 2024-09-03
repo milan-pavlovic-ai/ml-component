@@ -116,6 +116,7 @@ class Def:
     class Label:
         """Labels"""
         class API:
+            PING_SUCCESSFUL = 'Working!'
             ACCESS_DENIED = 'Authorization: Access denied'
 
         class Model:
