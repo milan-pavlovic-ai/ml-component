@@ -4,6 +4,7 @@ import os
 import sys
 sys.path.insert(0, os.path.join(os.path.abspath(os.path.dirname(__file__)), '..', '..'))
 
+import argparse
 import pandas as pd
 
 from loguru import logger
@@ -69,7 +70,8 @@ class PricingModel:
         # Initialize
         self.predictor = TabularPredictor(
             label=self.dataset.target,
-            eval_metric='mean_squared_error'
+            eval_metric='mean_squared_error',
+            path=Def.Model.Dir.MAIN
         )
 
         # Split dataset
@@ -112,7 +114,7 @@ class PricingModel:
             raise ValueError(Def.Label.Model.NOT_LOADED_OR_TRAINED)
         
         # Data workflow
-        input_dataset = DatasetManager(df=input_data, target=None)
+        input_dataset = DatasetManager(path='run-time', target='Price', df=input_data, is_inference=True)
         input_dataset.execute_preparation()
         input_df = input_dataset.df
         
@@ -121,3 +123,33 @@ class PricingModel:
         y_preds = y_preds.round().astype(int)
         
         return y_preds
+
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--train', '--train', action='store_true', help="Train model")
+    parser.add_argument('--eval', '--eval', action='store_true', help="Evaluate model")
+
+    args = parser.parse_args()
+    
+    # Load dataset
+    dataset = DatasetManager(
+        path=DatasetManager.get_processed_path(),
+        target='Price',
+        df=None,
+        is_inference=False
+    )
+    dataset.load()
+    
+    # Initialize model
+    model = PricingModel(dataset=dataset)
+    
+    # Train model
+    if args.train:
+        model.train()
+    
+    # Evaluate model
+    if args.eval:
+        model.load(Def.Model.Dir.MAIN)
+        model.eval()

@@ -163,6 +163,17 @@ class DatasetManager:
         self.df = self.df.drop(outliers_price.index).reset_index(drop=True)
         return
 
+    def validate_data(self) -> None:
+        """Validate data"""
+        if self.is_inference and self.df.shape[0] != 1:
+            raise ValueError("The instance should contain exactly one row for validation during the inference")
+
+        for feature in self.df.columns:
+            value = self.df.iloc[0][feature]
+            if not UtilityManager.Data.Validator.validate_feature_value(feature, value):
+                raise ValueError(f"Invalid value '{value}' for feature '{feature}'")
+        return
+
     def set_types(self) -> None:
         """Set types for features"""
         self.df[self.numerical_features] = self.df[self.numerical_features].astype(float)
@@ -184,8 +195,10 @@ class DatasetManager:
         # Pre-process features
         self.preprocess()
         
-        # Data cleaning
-        if not self.is_inference:
+        # Data cleaning and validation
+        if self.is_inference:
+            self.validate_data()
+        else:
             self.clean_data()
 
         # Feature selection
@@ -220,28 +233,22 @@ class DatasetManager:
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    # parser.add_argument('--down', '--number', type=int, help="An integer value", required=True)
-    parser.add_argument('--download', '--download', action='store_true', help="Enable verbose output")
-    parser.add_argument('--process', '--process', action='store_true', help="Enable verbose output")
+    parser.add_argument('--download', '--download', action='store_true', help="Download the latest data")
+    parser.add_argument('--process', '--process', action='store_true', help="Process data pipeline")
 
     args = parser.parse_args()
-    
-    args.process = True
-    
+
     # Download data
     if args.download:
         pass
     
     # Process data pipeline
     if args.process:
-        path = DatasetManager.get_raw_path()
         manager = DatasetManager(
-            path=path,
+            path=DatasetManager.get_raw_path(),
             target='Price',
             df=None,
             is_inference=False
         )
         manager.load()
         manager.execute_preparation(to_save=True)
-        pass
-        
