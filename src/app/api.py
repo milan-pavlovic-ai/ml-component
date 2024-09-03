@@ -21,12 +21,12 @@ from src.pricing.model import PricingModel
 app = FastAPI(
     title='ML Component for Car Pricing',
     description='Machine Learning Compoent for predicting car prices',
-    version=1.0
+    version="1.0"
 )
 
 
 # MODELS
-model = PricingModel.load(path=Def.Model.Dir.PATH)
+# model = PricingModel.load(path=Def.Model.Dir.PATH)
 
 
 # ENDPOINTS
@@ -50,6 +50,44 @@ def ping(request: PingInteface) -> JSONResponse:
     
     response = UtilityManager.Response.json_response_ok(message)
     
+    return response
+
+
+@app.post("/values")
+def allowed_values(feature: str = None) -> JSONResponse:
+    """Allowed values for given feature name.
+        If the feature value is empty, it will return list of all feature names.
+
+    Args:
+        
+        feature (str): Feature name
+
+    Raises:
+        
+        HTTPException: If feature doesn't exist
+
+    Returns:
+        
+        JSONResponse: List of allowed values for requested feature
+    """
+    # List of features
+    if not feature:
+        response = UtilityManager.Response.create_json_response(
+            content=list(Def.Data.VALIDATOR.keys())
+        )
+        return response
+    
+    # Values per feature
+    if feature in Def.Data.VALIDATOR:
+        response = UtilityManager.Response.create_json_response(
+            content=Def.Data.VALIDATOR[feature]
+        )
+    else:
+        response = UtilityManager.Response.json_response_err(
+            message=f"Feature '{feature}' not found",
+            status=HTTPStatus.BAD_REQUEST
+        )
+        
     return response
 
 
@@ -83,6 +121,5 @@ if Def.Env.DEBUG:
     uvicorn.run(
         app=app,
         host=Def.Host.NAME,
-        port=Def.Host.PORT,
-        debug=Def.Env.DEBUG
+        port=Def.Host.PORT
     )

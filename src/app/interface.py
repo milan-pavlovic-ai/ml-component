@@ -8,7 +8,7 @@ class PingInteface(BaseModel):
     """
     Ping interface
     """
-    message: Optional[str]
+    message: Optional[str] = ""
 
 
 class CarInterface(BaseModel):
