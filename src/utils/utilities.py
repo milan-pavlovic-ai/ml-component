@@ -4,9 +4,12 @@ import os
 import sys
 sys.path.insert(0, os.path.join(os.path.abspath(os.path.dirname(__file__)), '..', '..'))
 
+import io
 import pandas as pd
 
 from loguru import logger
+from http import HTTPStatus
+from fastapi.responses import JSONResponse
 
 
 class UtilityManager:
@@ -104,3 +107,51 @@ class UtilityManager:
             logger.info(f'Max = {values.max():.2f}')
             logger.info(f'IQR = {(values.quantile(0.75) - values.quantile(0.25)):.2f}')
             return
+
+    class Response:
+        """Response utilites"""
+
+        @staticmethod
+        def json_response_err(message: str, status: HTTPStatus) -> JSONResponse:
+            """
+            Create json response with error flag
+            Args:
+                message (str): content of message
+                status (HTTPStatus): status of message
+            Returns:
+                JSONResponse: response in json format for given message
+            """
+            if status is None:
+                status = HTTPStatus.INTERNAL_SERVER_ERROR
+                
+            return JSONResponse(content={'error': message}, status_code=status)
+        
+        @staticmethod
+        def json_response_ok(message: str, status: HTTPStatus=HTTPStatus.OK) -> JSONResponse:
+            """
+            Create valid json response with given message
+                Args:
+                    message (str): content of message
+                    status (HTTPStatus): status of message. Defaults HTTPStatus.OK.
+                Returns:
+                    JSONResponse: response in json format for given message
+            """
+            if status is None:
+                status = HTTPStatus.OK
+                
+            return JSONResponse(content={'message': message}, status_code=status)
+
+        @staticmethod
+        def create_json_response(content: dict, status: HTTPStatus=HTTPStatus.OK) -> JSONResponse:
+            """
+            Create json response for given dictionary
+                Args:
+                    content (dict): content in dict form
+                    status (HTTPStatus): status of message. Defaults HTTPStatus.OK.
+                Returns:
+                    JSONResponse: json response for given dictionary
+            """
+            if status is None:
+                status = HTTPStatus.OK
+                
+            return JSONResponse(content=content, status_code=status)
