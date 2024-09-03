@@ -359,8 +359,24 @@ utilsforecast = ">=0.0.10,<0.0.11"
 [package.extras]
 all = ["optimum[onnxruntime] (>=1.17,<1.19)"]
 chronos-onnx = ["optimum[onnxruntime] (>=1.17,<1.19)"]
-chronos-openvino = ["optimum-intel[openvino,nncf] (>=1.15,<1.17)", "optimum[openvino,nncf] (>=1.17,<1.19)"]
+chronos-openvino = ["optimum-intel[nncf,openvino] (>=1.15,<1.17)", "optimum[nncf,openvino] (>=1.17,<1.19)"]
 tests = ["pytest", "ruff (>=0.0.285)", "flaky (>=3.7,<4)", "pytest-timeout (>=2.1,<3)", "isort (>=5.10)", "black (>=23.0,<24.0)"]
+
+[[package]]
+name = "awscli"
+version = "1.34.10"
+description = "Universal Command Line Environment for AWS."
+category = "main"
+optional = false
+python-versions = ">=3.8"
+
+[package.dependencies]
+botocore = "1.35.10"
+colorama = ">=0.2.5,<0.4.7"
+docutils = ">=0.10,<0.17"
+PyYAML = ">=3.10,<6.1"
+rsa = ">=3.1.2,<4.8"
+s3transfer = ">=0.10.0,<0.11.0"
 
 [[package]]
 name = "bandit"
@@ -430,7 +446,7 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "botocore"
-version = "1.35.5"
+version = "1.35.10"
 description = "Low-level, data-driven core of boto 3."
 category = "main"
 optional = false
@@ -745,6 +761,14 @@ description = "Distribution utilities"
 category = "main"
 optional = false
 python-versions = "*"
+
+[[package]]
+name = "docutils"
+version = "0.16"
+description = "Docutils -- Python Documentation Utilities"
+category = "main"
+optional = false
+python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 
 [[package]]
 name = "evaluate"
@@ -1518,7 +1542,7 @@ scipy = "*"
 
 [package.extras]
 arrow = ["cffi (>=1.15.1)", "pyarrow (>=6.0.1)"]
-dask = ["dask[dataframe,array,distributed] (>=2.0.0)", "pandas (>=0.24.0)"]
+dask = ["dask[distributed,array,dataframe] (>=2.0.0)", "pandas (>=0.24.0)"]
 pandas = ["pandas (>=0.24.0)"]
 scikit-learn = ["scikit-learn (!=0.22.0)"]
 
@@ -2859,11 +2883,11 @@ python-versions = ">=3.8"
 
 [[package]]
 name = "rsa"
-version = "4.9"
+version = "4.7.2"
 description = "Pure-Python RSA implementation"
 category = "main"
 optional = false
-python-versions = ">=3.6,<4"
+python-versions = ">=3.5, <4"
 
 [package.dependencies]
 pyasn1 = ">=0.1.3"
@@ -3905,7 +3929,7 @@ test = ["pytest (>=6,<8.1.0 || >=8.2.0)", "pytest-checkdocs (>=2.4)", "pytest-co
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.9,<3.12"
-content-hash = "48e11860bc19bbdbee02a315cc02dde2893b8eaad7911f627bdd164498049345"
+content-hash = "6fbcc8c0ea0b1d66c62d372ff3866bd4fe08c4d3fb87e60535d513a877ef6b98"
 
 [metadata.files]
 absl-py = []
@@ -3928,6 +3952,7 @@ autogluon = []
 "autogluon.multimodal" = []
 "autogluon.tabular" = []
 "autogluon.timeseries" = []
+awscli = []
 bandit = []
 beautifulsoup4 = []
 blis = []
@@ -3956,6 +3981,7 @@ decorator = []
 defusedxml = []
 dill = []
 distlib = []
+docutils = []
 evaluate = []
 exceptiongroup = []
 executing = []
