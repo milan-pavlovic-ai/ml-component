@@ -4,8 +4,10 @@ import os
 import sys
 sys.path.insert(0, os.path.join(os.path.abspath(os.path.dirname(__file__)), '..', '..'))
 
+import argparse
 import pandas as pd
 
+from loguru import logger
 from sklearn.model_selection import train_test_split
 
 from src.config import Def
@@ -14,92 +16,39 @@ from src.utils.utilities import UtilityManager
 
 class DatasetManager:
     """Dataset Manager"""
-    
-    RELEVANT_RAW_FEATURES = [
-        'Manufacturer',
-        'Model',
-        'Prod. year',
-        'Category',
-        'Mileage',
-        'Fuel type',
-        'Engine volume',
-        'Cylinders',
-        'Gear box type',
-        'Drive wheels',
-        'Wheel',
-        'Color',
-        'Airbags',
-        'Leather interior',
-        'Price'
-    ]
-    
-    RELEVANT_FEATURES = [
-        'Manufacturer',
-        'Model',
-        'Prod. year',
-        'Category',
-        'Mileage',
-        'Fuel type',
-        'Engine volume',
-        'Cylinders',
-        'isTurbo',
-        'Gear box type',
-        'Drive wheels',
-        'Wheel',
-        'Color',
-        'Airbags',
-        'Leather interior',
-        'Price'
-    ]
-    
-    NUMERICAL_FEATURES = ['Prod. year', 'Mileage', 'Engine volume', 'Cylinders', 'Airbags', 'Price']
-    
-    CATEGORICAL_FEATURES = ['Manufacturer', 'Model', 'Category', 'Fuel type', 'Gear box type', 'Drive wheels', 'isTrubo', 'Wheel', 'Color', 'Leather interior']
-    
-    def __init__(self, path: str, target: str) -> None:
+
+    def __init__(
+            self,
+            path: str,
+            target: str,
+            df: pd.DataFrame = None,
+            is_inference: bool = False
+    ) -> None:
         """Initialize dataset manager
 
         Args:
-            path (str): Path to the dataset
-            target (str): Target feature from the dataset to predict
+            path (str): Path to the dataset.
+            target (str): Target feature from the dataset to predict.
+            df (pd.DataFrame, optional): Loaded dataset. Defaults to None.
+            is_inference (bool, optional): Whether is inference process or not. Defaults to False.
             
         Returns:
             None
         """
         self.path = path
         self.target = target
-        
-        self.df = None
-        
-        self.train_data = None
-        self.test_data = None
-        
-        self.is_loaded = False
-        self.is_processed = False
-        self.is_inference = self.target is None
-        return
-
-    def __init__(self, df: pd.DataFrame, target: str) -> None:
-        """Initialize dataset manager
-
-        Args:
-            df (str): Dataset
-            target (str): Target feature from the dataset to predict
-            
-        Returns:
-            None
-        """
-        self.path = 'run-time'
-        self.target = target
-        
         self.df = df
+        self.is_inference = is_inference
         
         self.train_data = None
         self.test_data = None
         
-        self.is_loaded = True
+        self.is_loaded = self.df is not None
         self.is_processed = False
-        self.is_inference = self.target is None
+        
+        self.relevant_features = list(Def.Data.VALIDATOR.keys())
+        self.numerical_features = [col for col, info in Def.Data.VALIDATOR.items() if info['type'] == 'numerical']
+        self.categorical_features = [col for col, info in Def.Data.VALIDATOR.items() if info['type'] == 'categorical']
         return
 
     @staticmethod
@@ -153,38 +102,74 @@ class DatasetManager:
 
     def clean_data(self) -> None:
         """Data cleaning and validation"""
+        # Make
         feature = 'Manufacturer'
-        outliers_make = UtilityManager.Data.find_outliers_categorical(self.df, feature, min_freq=5)
+        outliers_make = UtilityManager.Data.find_outliers_categorical(
+            self.df,
+            feature,
+            min_freq=Def.Data.Param.MIN_FREQ_MAKE
+        )
         self.df = self.df.drop(outliers_make.index).reset_index(drop=True)
         
+        # Model
         feature = 'Model'
-        outliers_model = UtilityManager.Data.find_outliers_categorical(self.df, feature, min_freq=3)
+        outliers_model = UtilityManager.Data.find_outliers_categorical(
+            self.df,
+            feature,
+            min_freq=Def.Data.Param.MIN_FREQ_MODEL
+        )
         self.df = self.df.drop(outliers_model.index).reset_index(drop=True)
         
+        # Production year
         feature = 'Prod. year'
-        outliers_prodyear = UtilityManager.Data.find_outliers_numeric(self.df, feature=feature, iqr_threshhold=7, min_value=1950, max_value=2025)
+        outliers_prodyear = UtilityManager.Data.find_outliers_numeric(
+            self.df,
+            feature=feature,
+            iqr_threshold=Def.Data.Param.IQR_THRESHOLD_PROD_YEAR,
+            min_value=Def.Data.VALIDATOR[feature]['min'],
+            max_value=Def.Data.VALIDATOR[feature]['max'],
+        )
         self.df = self.df.drop(outliers_prodyear.index).reset_index(drop=True)
         
+        # Body category
         feature = 'Category'
-        outliers_body = UtilityManager.Data.find_outliers_categorical(self.df, feature, min_freq=10)
+        outliers_body = UtilityManager.Data.find_outliers_categorical(
+            self.df,
+            feature,
+            min_freq=Def.Data.Param.MIN_FREQ_BODY_CATEGORY
+        )
         self.df = self.df.drop(outliers_body.index).reset_index(drop=True)
         
+        # Mileage
         feature = 'Mileage'
-        outliers_mileage = UtilityManager.Data.find_outliers_numeric(self.df, feature=feature, iqr_threshhold=3, min_value=0, max_value=600_000)
+        outliers_mileage = UtilityManager.Data.find_outliers_numeric(
+            self.df,
+            feature=feature,
+            iqr_threshold=Def.Data.Param.IQR_THRESHOLD_MILEAGE,
+            min_value=Def.Data.VALIDATOR[feature]['min'],
+            max_value=Def.Data.VALIDATOR[feature]['max'],
+        )
         self.df = self.df.drop(outliers_mileage.index).reset_index(drop=True)
         
+        # Car Price
         feature = 'Price'
-        outliers_price = UtilityManager.Data.find_outliers_numeric(self.df, feature=feature, iqr_threshhold=7.5, min_value=1000, max_value=150_000)
+        outliers_price = UtilityManager.Data.find_outliers_numeric(
+            self.df,
+            feature=feature,
+            iqr_threshold=Def.Data.Param.IQR_THRESHOLD_PRICE,
+            min_value=Def.Data.VALIDATOR[feature]['min'],
+            max_value=Def.Data.VALIDATOR[feature]['max'],
+        )
         self.df = self.df.drop(outliers_price.index).reset_index(drop=True)
         return
 
     def set_types(self) -> None:
         """Set types for features"""
-        self.df[DatasetManager.NUMERICAL_FEATURES] = self.df[DatasetManager.NUMERICAL_FEATURES].astype(float)
-        self.df[DatasetManager.CATEGORICAL_FEATURES] = self.df[DatasetManager.CATEGORICAL_FEATURES].astype(str)
+        self.df[self.numerical_features] = self.df[self.numerical_features].astype(float)
+        self.df[self.categorical_features] = self.df[self.categorical_features].astype(str)
         return
 
-    def execute_preparation(self) -> pd.DataFrame:
+    def execute_preparation(self, to_save: bool = False) -> pd.DataFrame:
         """Execute preparation of the raw dataset
 
         Returns:
@@ -192,10 +177,7 @@ class DatasetManager:
         """
         if not self.is_loaded:
             raise ValueError('Dataset is not loaded')
-        
-        # Feature selection
-        self.select_features(DatasetManager.RELEVANT_RAW_FEATURES)
-        
+
         # Add features
         self.add_features()
         
@@ -206,9 +188,19 @@ class DatasetManager:
         if not self.is_inference:
             self.clean_data()
 
+        # Feature selection
+        self.select_features(self.relevant_features)
+
         # Set types
         self.set_types()
         
+        # Save
+        if to_save:
+            path = DatasetManager.get_processed_path()
+            self.df.to_csv(path, index=False)
+            logger.info(f'Saved processed data at: {path}')
+        
+        # Set flag
         self.is_processed = True
         
         return self.df
@@ -224,3 +216,32 @@ class DatasetManager:
         """
         self.train_data, self.test_data = train_test_split(self.df, test_size=test_size, random_state=Def.Env.SEED)
         return
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    # parser.add_argument('--down', '--number', type=int, help="An integer value", required=True)
+    parser.add_argument('--download', '--download', action='store_true', help="Enable verbose output")
+    parser.add_argument('--process', '--process', action='store_true', help="Enable verbose output")
+
+    args = parser.parse_args()
+    
+    args.process = True
+    
+    # Download data
+    if args.download:
+        pass
+    
+    # Process data pipeline
+    if args.process:
+        path = DatasetManager.get_raw_path()
+        manager = DatasetManager(
+            path=path,
+            target='Price',
+            df=None,
+            is_inference=False
+        )
+        manager.load()
+        manager.execute_preparation(to_save=True)
+        pass
+        

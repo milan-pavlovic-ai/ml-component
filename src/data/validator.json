@@ -408,8 +408,8 @@
     },
     "Prod. year": {
         "type": "numerical",
-        "min": 1974,
-        "max": 2024
+        "min": 1965,
+        "max": 2025
     },
     "Mileage": {
         "type": "numerical",

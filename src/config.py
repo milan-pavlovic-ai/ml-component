@@ -107,7 +107,17 @@ class Def:
             RAW = os.path.join(MAIN, 'raw')
             PROCESSED = os.path.join(MAIN, 'processed')
             TEMP = os.path.join(MAIN, 'temp')
+        
+        class Param:
+            """Parameters"""
+            MIN_FREQ_MAKE = 5
+            MIN_FREQ_MODEL = 3
+            MIN_FREQ_BODY_CATEGORY = 10
             
+            IQR_THRESHOLD_PROD_YEAR = 7
+            IQR_THRESHOLD_MILEAGE = 3
+            IQR_THRESHOLD_PRICE = 7.5
+        
         with open(os.path.join(ROOT_DIR, 'src', 'data', 'validator.json'), 'r') as f:
             VALIDATOR = json.load(f)
         
