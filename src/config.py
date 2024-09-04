@@ -92,6 +92,7 @@ class Def:
         PORT = int(config['PORT'])
         URL = config['HOST_URL']
         REGION = config['AWS_REGION']
+        PROFILE = config['AWS_PROFILE']
         
     class DB:
         """Database variables"""
@@ -133,6 +134,12 @@ class Def:
         class API:
             PING_SUCCESSFUL = 'Working!'
             ACCESS_DENIED = 'Authorization: Access denied'
+            
+            TRAINING_JOB_SUCCESSFUL = 'The trainig job for the latest dataset has been created'
+            TRAINING_JOB_FAILED = 'Failed to create a training job'
+            
+            PRICING_INVALID_INSTANCE = 'Input features are not valid'
+            PRICING_PREDICTION_FAILED = 'Failed prediction of the car price'
 
         class Storage:
             CLEANED_BUCKET = 'All items in the bucket has been deleted!'
