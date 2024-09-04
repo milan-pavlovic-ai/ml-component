@@ -85,5 +85,6 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
 
 
 # if __name__ == '__main__':
-#     lambda_handler(event=None, context=None)
+#     response = lambda_handler(event=None, context=None)
+#     print(response)
     

@@ -59,7 +59,7 @@ def load_model() -> PricingModel:
     with model_lock:
 
         # Local model
-        if Def.Env.IS_LOCAL:
+        if not Def.Env.IS_LOCAL:
             model = PricingModel(dataset=None)
             model.load(path=Def.Model.Dir.MAIN)
             return model
