@@ -14,23 +14,27 @@ from src.config import Def, logger
 class StorageS3:
     """API for AWS S3 storage"""
     
-    def __init__(self, bucket: str, region: str) -> None:
+    def __init__(self, bucket: str, region: str, profile: str = None) -> None:
         """Initialize S3 storage
 
         Args:
             * bucket (str): AWS S3 bucket name
             * region (str): AWS region name
+            * profile (str): AWS Profile name
             
         Returns:
             None
         """
         self.bucket = bucket
         self.region = region
-        self.conn = aws.resource('s3')
-        self.client = aws.client('s3')
-        self.extra_args = {
-            'StorageClass': 'STANDARD'
-        }
+        self.profile = profile
+        
+        self.session = aws.Session(profile_name=self.profile) if self.profile else aws.Session()
+        
+        self.conn = self.session.resource('s3', region_name=self.region)
+        self.client = self.session.client('s3', region_name=self.region)
+        
+        self.extra_args = {'StorageClass': 'STANDARD'}
         return
 
     def clean_bucket(self) -> None:
@@ -70,3 +74,48 @@ class StorageS3:
             logger.error(message)
             logger.error(err)
             raise ValueError(message)
+
+    def find_latest_file(self, prefix: str) -> str:
+        """Find the latest file in the given path within the bucket.
+
+        Args:
+            * prefix (str): The path prefix to search for files
+            
+        Returns:
+            * str: The key of the latest modified file
+        """
+        try:
+            bucket = self.conn.Bucket(self.bucket)
+            files = list(bucket.objects.filter(Prefix=prefix))
+            
+            if not files:
+                return None
+            
+            latest_file = max(files, key=lambda x: x.last_modified)
+            return latest_file.key
+
+        except Exception as ex:
+            logger.error(f"Error finding latest file: {ex}")
+            return None
+        
+    def copy_file(self, src_key: str, dest_key: str) -> bool:
+        """Copy a file to another location with.
+
+        Args:
+            * src_key (str): The key of the source file to copy
+            * dest_key (str): The key of the destination file
+            
+        Returns:
+            * bool: True if the copy operation was successful, False otherwise
+        """
+        try:
+            copy_source = {
+                'Bucket': self.bucket,
+                'Key': src_key
+            }
+            self.client.copy(copy_source, self.bucket, dest_key, ExtraArgs=self.extra_args)
+            return True
+
+        except Exception as ex:
+            logger.error(f"Error copying file: {ex}")
+            return False
