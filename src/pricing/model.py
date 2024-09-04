@@ -18,7 +18,7 @@ from src.data.dataset import DatasetManager
 class PricingModel:
     """Pricing Model"""
     
-    def __init__(self, dataset: DatasetManager) -> None:
+    def __init__(self, dataset: DatasetManager, path: str = None) -> None:
         """Initialize model with dataset
 
         Args:
@@ -28,6 +28,8 @@ class PricingModel:
             None
         """
         self.dataset = dataset
+        self.model_path = path if path else Def.Model.Dir.MAIN
+        self.main_metric = 'mean_squared_error'
         
         self.predictor = None
         self.train_data = None
@@ -56,6 +58,7 @@ class PricingModel:
             None
         """
         self.predictor = TabularPredictor.load(path)
+        logger.info(f'Loaded model from path: {path}')
         return
 
     def train(self) -> None:
@@ -63,8 +66,8 @@ class PricingModel:
         # Initialize
         self.predictor = TabularPredictor(
             label=self.dataset.target,
-            eval_metric='mean_squared_error',
-            path=Def.Model.Dir.MAIN
+            eval_metric=self.main_metric,
+            path=self.model_path
         )
         
         # Hyper-parameters
@@ -82,8 +85,15 @@ class PricingModel:
         )
         return
 
-    def eval(self) -> None:
-        """Evaluate model on test dataset"""
+    def eval(self) -> dict[str, float]:
+        """Evaluate model on test dataset
+
+        Raises:
+            ValueError: If the model is not trained
+
+        Returns:
+            dict[str, float]: Scores
+        """
         if self.predictor is None:
             raise ValueError(Def.Label.Model.NOT_LOADED_OR_TRAINED)
         
@@ -97,10 +107,14 @@ class PricingModel:
         r2 = r2_score(y_true, y_pred)
         
         # Results
-        logger.info(f"Mean Squared Error: {mse:.2f}")
-        logger.info(f"Mean Absolute Error: {mae:.2f}")
-        logger.info(f"R2 Score: {r2:.2f}")
-        return
+        results = {
+            'Mean Squared Error': round(mse, 2),
+            'Mean Absolute Error': round(mae, 2),
+            'R2 Score': round(r2, 2)
+        }
+        logger.info(results)
+        
+        return results
 
     def predict(self, input_data: pd.DataFrame) -> list[int]:
         """Predict car price for given cars
