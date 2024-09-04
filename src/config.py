@@ -140,6 +140,11 @@ class Def:
             
             PRICING_INVALID_INSTANCE = 'Input features are not valid'
             PRICING_PREDICTION_FAILED = 'Failed prediction of the car price'
+            
+        class DataProcessor:
+            """Data processor"""
+            PROCESSED_SUCCESSFULLY = 'The latest dataset has been processed successfully'
+            PROCESSED_FAILED = 'Failed to process the latest dataset'
 
         class Storage:
             CLEANED_BUCKET = 'All items in the bucket has been deleted!'

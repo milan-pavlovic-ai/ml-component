@@ -4,10 +4,13 @@ import os
 import sys
 sys.path.insert(0, os.path.join(os.path.abspath(os.path.dirname(__file__)), '..', '..'))
 
+import io
 import uuid
 import time as t
 import boto3 as aws
+import pandas as pd
 
+from typing import Any
 from src.config import Def, logger
 
 
@@ -66,7 +69,7 @@ class StorageS3:
             obj.put(Body=preds, **self.extra_args)
             obj.wait_until_exists()
  
-            logger.info(f'Saved predictions to S3 bucket {self.bucket}/{Def.DB.RESPONSE_DIR}')
+            logger.info(f'Saved predictions to {self.bucket}/{Def.DB.RESPONSE_DIR}')
             return True
 
         except Exception as err:
@@ -92,6 +95,8 @@ class StorageS3:
                 return None
             
             latest_file = max(files, key=lambda x: x.last_modified)
+            logger.info(f"Found the latest dataset at {latest_file.key}")
+                        
             return latest_file.key
 
         except Exception as ex:
@@ -114,8 +119,66 @@ class StorageS3:
                 'Key': src_key
             }
             self.client.copy(copy_source, self.bucket, dest_key, ExtraArgs=self.extra_args)
+            logger.info(f"Copied data from {src_key} to {dest_key}")
             return True
 
         except Exception as ex:
             logger.error(f"Error copying file: {ex}")
             return False
+
+    def get_object(self, path: str) -> Any:
+        """Retrieve object from the given path
+
+        Args:
+            path (str): Path to the object
+
+        Returns:
+            Any: Object
+        """
+        response = self.client.get_object(Bucket=self.bucket, Key=path)
+        
+        obj = response['Body'].read().decode('utf-8')
+        logger.info(f"Dataset downloaded from {self.bucket}/{path}")
+        
+        return obj
+
+    def get_object_csv(self, path: str) -> Any:
+        """Retrieve object from the given path
+
+        Args:
+            path (str): Path to the object
+
+        Returns:
+            Any: Object
+        """
+        content = self.get_object(path=path)
+        raw_data = io.StringIO(content)
+        
+        df = pd.read_csv(raw_data, header=0)
+        logger.info(f"Dataset downloaded from {self.bucket}/{path}")
+        
+        return df
+
+    def upload_dataframe_as_csv(self, path: str, df: pd.DataFrame) -> None:
+        """Uploads an object to an S3 bucket.
+
+        Args:
+            path (str): Where the object will be stored in the bucket.
+            df (pd.DataFrame): The data to upload. Can be a string or bytes.
+            
+        Returns:
+            None
+        """
+        csv_buffer = io.StringIO()
+        df.to_csv(csv_buffer, index=False)
+        body = csv_buffer.getvalue()
+        
+        self.client.put_object(
+            Bucket=self.bucket,
+            Key=path,
+            Body=body,
+            ContentType='text/csv'
+        )
+        
+        logger.info(f"Dataset uploaded to {self.bucket}/{path}")
+        return

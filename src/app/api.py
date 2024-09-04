@@ -177,7 +177,6 @@ def create_training_job() -> JSONResponse:
     return response
 
 
-
 # AWS Gateway API
 handler = Mangum(app)
 
