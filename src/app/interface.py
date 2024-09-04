@@ -1,14 +1,6 @@
 """API Interface"""
 
-from typing import Optional
 from pydantic import BaseModel, Field
-
-
-class PingInteface(BaseModel):
-    """
-    Ping interface
-    """
-    message: Optional[str] = ""
 
 
 class CarInterface(BaseModel):
