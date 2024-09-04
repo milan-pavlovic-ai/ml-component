@@ -58,27 +58,28 @@ class PricingModel:
         self.predictor = TabularPredictor.load(path)
         return
 
-    def train(self, test_portion: float = 0.1) -> None:
-        """Train model
-
-        Args:
-            test_portion (float): Portion of the dataset for testing. Defaults is 0.1.
-            
-        Returns:
-            None
-        """
+    def train(self) -> None:
+        """Train model"""
         # Initialize
         self.predictor = TabularPredictor(
             label=self.dataset.target,
             eval_metric='mean_squared_error',
             path=Def.Model.Dir.MAIN
         )
-
-        # Split dataset
-        self.dataset.split(test_size=test_portion)
+        
+        # Hyper-parameters
+        hyperparameters = {
+            'GBM': {},
+            # 'XGB': {},
+            # 'CAT': {},
+            # 'NN_TORCH': {}
+        }
         
         # Fit predictor
-        self.predictor.fit(self.dataset.train_data)
+        self.predictor.fit(
+            train_data=self.dataset.train_data,
+            hyperparameters=hyperparameters
+        )
         return
 
     def eval(self) -> None:
@@ -133,7 +134,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     
-    # Load dataset
+    # Prepare dataset
     dataset = DatasetManager(
         path=DatasetManager.get_processed_path(),
         target='Price',
@@ -141,7 +142,8 @@ if __name__ == '__main__':
         is_inference=False
     )
     dataset.load()
-    
+    dataset.split()
+        
     # Initialize model
     model = PricingModel(dataset=dataset)
     
