@@ -37,7 +37,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     try:
         # Find the latest dataset
         latest_dataset_path = storage.find_latest_file(prefix='data/raw')    
-        latest_df = storage.get_object_csv(path=latest_dataset_path)
+        latest_df = storage.get_dataframe_from_csv(path=latest_dataset_path)
 
         # Process dataset
         dataset = DatasetManager(path='s3-storage', target='Price', df=latest_df, is_inference=False)

@@ -4,6 +4,7 @@ import os
 import sys
 sys.path.insert(0, os.path.join(os.path.abspath(os.path.dirname(__file__)), '..', '..'))
 
+import threading
 import uvicorn
 import pandas as pd
 
@@ -31,12 +32,6 @@ app = FastAPI(
 )
 
 
-# MODELS
-
-model = PricingModel(dataset=None)
-model.load(path=Def.Model.Dir.MAIN)
-
-
 # STORAGE
 
 storage = StorageS3(
@@ -44,6 +39,45 @@ storage = StorageS3(
     region=Def.Host.REGION,
     profile=Def.Host.PROFILE
 )
+
+
+# MODELS
+
+model = None
+model_version = None
+model_lock = threading.Lock()
+
+
+def load_model() -> PricingModel:
+    """Get and load the latest remote model
+
+    Returns:
+        PricingModel: Latest loaded model
+    """
+    global model, model_version
+
+    with model_lock:
+
+        # Local model
+        if Def.Env.IS_LOCAL:
+            model = PricingModel(dataset=None)
+            model.load(path=Def.Model.Dir.MAIN)
+            return model
+    
+        # Check does need update
+        current_model_version = storage.get_latest_model_dir(base_path='models')
+        
+        if model_version != current_model_version:
+            model_version = current_model_version
+            
+            # Download model
+            storage.download_model(remote_dir='models', local_dir=Def.Model.Dir.TEMP_LAMBDA)
+            
+            # Load model
+            model = PricingModel(dataset=None)
+            model.load(path=Def.Model.Dir.TEMP_LAMBDA)
+    
+    return model
 
 
 # ENDPOINTS
@@ -111,6 +145,9 @@ def car_pricing(request: CarInterface) -> JSONResponse:
         JSONResponse: Price of the car
     """
     try:
+        # Load the latest model
+        model = load_model()
+        
         # Prepare request
         car_data = request.model_dump(by_alias=True)
         input_df = pd.DataFrame([car_data]) 

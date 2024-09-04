@@ -85,6 +85,7 @@ class Def:
         """Environment variables"""
         SEED = 21
         DEBUG = sys.gettrace() is not None
+        IS_LOCAL = ENVIRONMENT == 'local'
 
     class Host:
         """Host information"""
@@ -97,7 +98,7 @@ class Def:
     class DB:
         """Database variables"""
         S3_BUCKET = config['S3_BUCKET']
-        RESPONSE_DIR = 'response'
+        VERSION_DIR = 'version'
         EMPTY = -1
         
     class Data:
@@ -128,6 +129,7 @@ class Def:
             """Directory"""
             MAIN = os.path.join(ROOT_DIR, 'models')
             PATH = os.path.join(MAIN, config['MODEL_PRICE'], 'model.pkl')
+            TEMP_LAMBDA = '/tmp/models'
     
     class Label:
         """Labels"""
@@ -152,3 +154,8 @@ class Def:
 
         class Model:
             NOT_LOADED_OR_TRAINED = 'Model is not loaded or trained'
+            
+            UPLOADED_SUCCESSFULLY = 'Model has been uploaded successfully into S3 bucket'
+            DOWNLOADED_SUCCESSFULLY = 'Model has been downloaded successfully into S3 bucket'
+            
+            TRAINING_FAILED = 'Failed to train and/or upload model with the latest datset into S3 bucket'

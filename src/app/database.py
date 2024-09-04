@@ -5,12 +5,12 @@ import sys
 sys.path.insert(0, os.path.join(os.path.abspath(os.path.dirname(__file__)), '..', '..'))
 
 import io
-import uuid
-import time as t
+import json
 import boto3 as aws
 import pandas as pd
 
 from typing import Any
+from datetime import datetime
 from src.config import Def, logger
 
 
@@ -40,6 +40,7 @@ class StorageS3:
         self.extra_args = {'StorageClass': 'STANDARD'}
         return
 
+
     def clean_bucket(self) -> None:
         """Delete all items in the bucket"""
         try:
@@ -52,24 +53,26 @@ class StorageS3:
 
         return Def.DB.EMPTY
 
-    def save_response(self, preds: dict) -> bool:
-        """Save prediction in storage
+    def save_version(self, content: dict, timestamp: str) -> bool:
+        """Save version information in the storage
 
         Args:
-            preds (dict): JSON object of predictions
+            content (dict): Content about version to save
+            timestamp (str): Timestamp to be used as file name
 
         Returns:
             bool: True if predictions are successfully saved, otherwise False
         """
         try:
-            file_name = f'{int(t.time())}_{uuid.uuid4()}.json'
-            to_path = os.path.join(Def.DB.RESPONSE_DIR, file_name)
+            file_name = f'{timestamp}.json'
+            to_path = os.path.join(Def.DB.VERSION_DIR, file_name)
+            body = json.dumps(content)
             
             obj = self.conn.Object(self.bucket, to_path)
-            obj.put(Body=preds, **self.extra_args)
+            obj.put(Body=body, **self.extra_args)
             obj.wait_until_exists()
- 
-            logger.info(f'Saved predictions to {self.bucket}/{Def.DB.RESPONSE_DIR}')
+
+            logger.info(f'Saved version info to {self.bucket}/{to_path}')
             return True
 
         except Exception as err:
@@ -77,6 +80,7 @@ class StorageS3:
             logger.error(message)
             logger.error(err)
             raise ValueError(message)
+
 
     def find_latest_file(self, prefix: str) -> str:
         """Find the latest file in the given path within the bucket.
@@ -126,6 +130,7 @@ class StorageS3:
             logger.error(f"Error copying file: {ex}")
             return False
 
+
     def get_object(self, path: str) -> Any:
         """Retrieve object from the given path
 
@@ -142,7 +147,8 @@ class StorageS3:
         
         return obj
 
-    def get_object_csv(self, path: str) -> Any:
+
+    def get_dataframe_from_csv(self, path: str) -> Any:
         """Retrieve object from the given path
 
         Args:
@@ -182,3 +188,84 @@ class StorageS3:
         
         logger.info(f"Dataset uploaded to {self.bucket}/{path}")
         return
+
+
+    def upload_model(self, local_dir: str, remote_dir: str) -> None:
+        """Upload local model from temp directory into remote S3 directory
+
+        Args:
+            local_dir (str): Local temporary directory
+            remote_dir (str): Remote S3 directory
+            
+        Returns:
+            None
+        """
+        for root, dirs, files in os.walk(local_dir):
+
+            for single_file in files:
+                local_path = os.path.join(root, single_file)
+                relative_path = os.path.relpath(local_path, local_dir)
+                
+                s3_path = os.path.join(remote_dir, relative_path)
+
+                self.client.upload_file(local_path, self.bucket, s3_path)
+                
+        logger.info(Def.Label.Model.UPLOADED_SUCCESSFULLY)
+        return
+
+    def download_model(self, remote_dir: str, local_dir: str) -> None:
+        """Download model from the remote directory into the local directory
+
+        Args:
+            remote_dir (str): Remote directory on S3
+            local_dir (str): Local directory
+            
+        Returns:
+            None
+        """
+        # Get latest model
+        latest_model_dir = self.get_latest_model_dir(base_path=remote_dir)
+        
+        # Download model
+        paginator = self.client.get_paginator('list_objects_v2')
+        pages = paginator.paginate(Bucket=self.bucket, Prefix=latest_model_dir)
+
+        for page in pages:
+            if 'Contents' in page:
+                for obj in page['Contents']:
+                    s3_path = obj['Key']
+                    relative_path = os.path.relpath(s3_path, latest_model_dir)
+                    local_path = os.path.join(local_dir, relative_path)
+
+                    local_dir = os.path.dirname(local_path)
+                    if not os.path.exists(local_dir):
+                        os.makedirs(local_dir)
+
+                    self.client.download_file(self.bucket, s3_path, local_path)
+        
+        logger.info(Def.Label.Model.DOWNLOADED_SUCCESSFULLY)
+        return
+
+    def get_latest_model_dir(self, base_path: str) -> str:
+        """Find the latest model directory based on timestamp
+
+        Args:
+            base_path (str): Base path to find the latest model
+
+        Returns:
+            str: Latest model path
+        """
+        folders = set()
+        paginator = self.client.get_paginator('list_objects_v2')
+
+        for page in paginator.paginate(Bucket=self.bucket, Prefix=f'{base_path}/', Delimiter='/'):
+            if 'CommonPrefixes' in page:
+                for prefix_info in page['CommonPrefixes']:
+                    folder_name = prefix_info['Prefix'].rstrip('/').split('/')[-1]
+                    folders.add(folder_name)
+
+        sorted_folders = sorted(list(folders))
+        latest_dir = sorted_folders[-1]
+
+        return latest_dir
+
