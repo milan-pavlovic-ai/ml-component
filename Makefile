@@ -157,6 +157,16 @@ app: active
 	@echo "\nStart main app"
 	$(PYTHON_INTERPRETER) src/app/api.py
 
+## Start API in development mode
+api_dev: active
+	@echo "\nStart api dev"
+	uvicorn src.app.api:app --reload --host 0.0.0.0 --port 3000
+
+## Clean port with clean_port PORT=xxxx
+clean_port:
+	@echo "\nCleaning up port $(PORT)"
+	@lsof -ti:$(PORT) | xargs kill -9 || true
+
 ##############
 # PRICING #
 ##############
@@ -164,12 +174,12 @@ app: active
 ## Generate data
 data: active
 	@echo "\nGenerate data"
-	$(PYTHON_INTERPRETER) src/dataset.py
+	$(PYTHON_INTERPRETER) src/data/dataset.py --download
 
 ## Create an initial dataset
 dataset: active
 	@echo "\nCreate an initial dataset"
-	$(PYTHON_INTERPRETER) src/dataset.py
+	$(PYTHON_INTERPRETER) src/data/dataset.py --process
 
 ## Train model
 train: active

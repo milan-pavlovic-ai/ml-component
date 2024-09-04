@@ -5,6 +5,7 @@ import sys
 sys.path.insert(0, os.path.join(os.path.abspath(os.path.dirname(__file__)), '..', '..'))
 
 import uvicorn
+import pandas as pd
 
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
@@ -15,9 +16,11 @@ from src.config import Def
 from src.app.interface import CarInterface, PingInteface
 from src.utils.utilities import UtilityManager
 from src.pricing.model import PricingModel
+from src.data.dataset import DatasetManager
 
 
 # API
+
 app = FastAPI(
     title='ML Component for Car Pricing',
     description='Machine Learning Compoent for predicting car prices',
@@ -26,7 +29,9 @@ app = FastAPI(
 
 
 # MODELS
-# model = PricingModel.load(path=Def.Model.Dir.PATH)
+
+model = PricingModel(dataset=None)
+model.load(path=Def.Model.Dir.MAIN)
 
 
 # ENDPOINTS
@@ -103,13 +108,22 @@ def car_pricing(request: CarInterface) -> JSONResponse:
     
         JSONResponse: Price of the car
     """
-    # TODO
+    # Prepare request
+    car_data = request.model_dump(by_alias=True)
+    input_df = pd.DataFrame([car_data]) 
     
-    message = 'Car Pricing'
-    response = UtilityManager.Response.json_response_ok(message)
+    # Prepare data
+    dataset = DatasetManager(path='inference', target='Price', df=input_df, is_inference=True)
+    dataset.execute_preparation(to_save=False)
+    
+    # Predict with model
+    predictions = model.predict(input_data=dataset.df)
+    
+    # Create response
+    content = {'carPrice': predictions.tolist()}
+    response = UtilityManager.Response.create_json_response(content=content)
     
     return response
-
 
 
 # AWS Gateway API

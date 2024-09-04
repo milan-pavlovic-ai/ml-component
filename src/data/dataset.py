@@ -47,8 +47,8 @@ class DatasetManager:
         self.is_processed = False
         
         self.relevant_features = list(Def.Data.VALIDATOR.keys())
-        self.numerical_features = [col for col, info in Def.Data.VALIDATOR.items() if info['type'] == 'numerical']
         self.categorical_features = [col for col, info in Def.Data.VALIDATOR.items() if info['type'] == 'categorical']
+        self.numerical_features = [col for col, info in Def.Data.VALIDATOR.items() if info['type'] == 'numerical']
         return
 
     @staticmethod
@@ -86,6 +86,9 @@ class DatasetManager:
         Returns:
             None
         """
+        if self.is_inference and self.target in features:
+            features.remove(self.target)
+            
         self.df = self.df[features]
         return
 
@@ -168,7 +171,7 @@ class DatasetManager:
         if self.is_inference and self.df.shape[0] != 1:
             raise ValueError("The instance should contain exactly one row for validation during the inference")
 
-        for feature in self.df.columns:
+        for feature in self.df.columns:            
             value = self.df.iloc[0][feature]
             if not UtilityManager.Data.Validator.validate_feature_value(feature, value):
                 raise ValueError(f"Invalid value '{value}' for feature '{feature}'")
@@ -176,7 +179,11 @@ class DatasetManager:
 
     def set_types(self) -> None:
         """Set types for features"""
-        self.df[self.numerical_features] = self.df[self.numerical_features].astype(float)
+        for feature in self.numerical_features:
+            if self.is_inference and feature == self.target:
+                continue
+            self.df[feature] = self.df[feature].astype(float)
+
         self.df[self.categorical_features] = self.df[self.categorical_features].astype(str)
         return
 
@@ -189,16 +196,17 @@ class DatasetManager:
         if not self.is_loaded:
             raise ValueError('Dataset is not loaded')
 
-        # Add features
-        self.add_features()
-        
-        # Pre-process features
-        self.preprocess()
-        
-        # Data cleaning and validation
         if self.is_inference:
+            # Validation
             self.validate_data()
         else:
+            # Add features
+            self.add_features()
+            
+            # Pre-process features
+            self.preprocess()
+            
+            # Data cleaning
             self.clean_data()
 
         # Feature selection
