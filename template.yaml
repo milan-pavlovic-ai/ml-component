@@ -1,0 +1,195 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: ML Component for Car Pricing
+
+Parameters:
+  BucketName:
+    Type: String
+    Description: "Name of the S3 bucket that triggers the Lambda function"
+
+Resources:
+  CarPricingInferenceFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      PackageType: Image
+      Role: !GetAtt CarPricingRole.Arn
+      FunctionName: Car-Pricing-Inference-Lambda-Function
+      Tracing: Active
+      Timeout: 60
+      MemorySize: 1024
+      ImageConfig:
+        Command: ["src.app.api.handler"]
+      Events:
+        CarPricingInferenceApiRoot:
+          Type: Api
+          Properties: 
+            RestApiId: !Ref CarPricingAPIGateway
+            Path: /
+            Method: POST
+        CarPricingInferenceApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref CarPricingAPIGateway
+            Path: /{proxy+}
+            Method: POST
+    Metadata:
+      DockerTag: python3.9-v1
+      DockerContext: ./
+      Dockerfile: Dockerfile
+  
+  CarPricingTrainingFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      PackageType: Image
+      Role: !GetAtt CarPricingRole.Arn
+      FunctionName: Car-Pricing-Training-Lambda-Function
+      Tracing: Active
+      Timeout: 600
+      MemorySize: 2048
+      ImageConfig:
+        Command: ["src.app.trainer.lambda_handler"]
+      Events:
+        S3Trigger:
+          Type: S3
+          Properties:
+            Bucket: !Ref BucketName
+            Events: s3:ObjectCreated:Put
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: prefix
+                    Value: data/processed/
+    Metadata:
+      DockerTag: python3.9-v1
+      DockerContext: ./
+      Dockerfile: Dockerfile
+
+  CarPricingProcessorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      PackageType: Image
+      Role: !GetAtt CarPricingRole.Arn
+      FunctionName: Car-Pricing-DataProcessor-Lambda-Function
+      Tracing: Active
+      Timeout: 60
+      MemorySize: 1024
+      ImageConfig:
+        Command: ["src.app.processor.lambda_handler"]
+      Events:
+        S3Trigger:
+          Type: S3
+          Properties:
+            Bucket: !Ref BucketName
+            Events: s3:ObjectCreated:Put
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: prefix
+                    Value: data/raw/
+    Metadata:
+      DockerTag: python3.9-v1
+      DockerContext: ./
+      Dockerfile: Dockerfile
+
+  CarPricingAPIGateway:
+    Type: AWS::Serverless::Api
+    Properties:
+      OpenApiVersion: '3.0.0'
+      TracingEnabled: true
+
+  CarPricingRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: Car-Pricing-Role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - apigateway.amazonaws.com
+                - lambda.amazonaws.com
+                - s3.amazonaws.com
+                - logs.amazonaws.com
+                - events.amazonaws.com
+                - cloudwatch.amazonaws.com
+            Action:
+              - sts:AssumeRole
+
+  CarPricingAPIPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: Car-Pricing-Policy-API
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - apigateway:*
+            Resource:
+              - 'arn:aws:apigateway:*::/*'
+      Roles:
+        - Ref: CarPricingRole
+
+  CarPricingLambdaPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: Car-Pricing-Policy-Lambda
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - lambda:InvokeFunction
+            Resource:
+              - '*'
+      Roles:
+        - Ref: CarPricingRole
+
+  CarPricingS3Policy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: Car-Pricing-Policy-S3
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - s3:GetObject
+              - s3:PutObject
+            Resource:
+              - 'arn:aws:s3:::rzk-car-pricing/*'
+      Roles:
+        - Ref: CarPricingRole
+
+  CarPricingLogPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: Car-Pricing-Policy-Log
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - logs:CreateLogGroup
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+            Resource:
+              - 'arn:aws:logs:*:*:*'
+      Roles:
+        - Ref: CarPricingRole
+
+  CarPricingCloudWatchPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: Car-Pricing-Policy-CloudWatch
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - cloudwatch:PutMetricData
+            Resource:
+              - '*'
+      Roles:
+        - Ref: CarPricingRole

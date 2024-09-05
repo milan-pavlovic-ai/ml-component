@@ -132,7 +132,7 @@ build: cls clean active
 ## Deploy SAM docker image to AWS
 deploy: build
 	@echo "\nDeploy docker image to AWS"
-	sam deploy --guided --capabilities CAPABILITY_NAMED_IAM --profile $(PROFILE) --parameter-overrides "StageParam=\"$(PROFILE)\"" --stack-name "pricing" --config-file "samconfig.toml" --config-env $(PROFILE) --confirm-changeset
+	sam deploy --guided --capabilities CAPABILITY_NAMED_IAM --profile $(PROFILE) --parameter-overrides "BucketName=\"$(BUCKET)\"" --stack-name "car-pricing" --config-file "samconfig.toml" --config-env $(PROFILE) --confirm-changeset
 
 ## Clean all docker images, containers, and volumes
 prune: cls stop
