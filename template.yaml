@@ -49,7 +49,7 @@ Resources:
       ImageConfig:
         Command: ["src.app.trainer.lambda_handler"]
       Events:
-        S3Trigger:
+        TrainingS3Trigger:
           Type: S3
           Properties:
             Bucket: !Ref BucketName
@@ -76,7 +76,7 @@ Resources:
       ImageConfig:
         Command: ["src.app.processor.lambda_handler"]
       Events:
-        S3Trigger:
+        ProcessorS3Trigger:
           Type: S3
           Properties:
             Bucket: !Ref BucketName
