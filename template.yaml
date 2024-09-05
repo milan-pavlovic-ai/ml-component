@@ -6,8 +6,18 @@ Parameters:
   BucketName:
     Type: String
     Description: "Name of the S3 bucket that triggers the Lambda function"
+  StageName:
+    Type: String
+    Default: cloud
+    Description: "Environment stage name for API"
 
 Resources:
+
+  CarPricingBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref BucketName
+
   CarPricingInferenceFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -52,7 +62,7 @@ Resources:
         TrainingS3Trigger:
           Type: S3
           Properties:
-            Bucket: !Ref BucketName
+            Bucket: !Ref CarPricingBucket
             Events: s3:ObjectCreated:Put
             Filter:
               S3Key:
@@ -79,7 +89,7 @@ Resources:
         ProcessorS3Trigger:
           Type: S3
           Properties:
-            Bucket: !Ref BucketName
+            Bucket: !Ref CarPricingBucket
             Events: s3:ObjectCreated:Put
             Filter:
               S3Key:
@@ -94,6 +104,7 @@ Resources:
   CarPricingAPIGateway:
     Type: AWS::Serverless::Api
     Properties:
+      StageName: !Ref StageParam
       OpenApiVersion: '3.0.0'
       TracingEnabled: true
 

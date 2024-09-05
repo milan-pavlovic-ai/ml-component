@@ -163,6 +163,7 @@ cython_debug/
 
 # Environments
 .vscode
+.aws-sam
 **/*.env
 data/
 models/
