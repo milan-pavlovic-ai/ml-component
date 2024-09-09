@@ -127,10 +127,10 @@ Resources:
       Description: Usage plan for Car Pricing API
       UsagePlanName: CarPricingUsagePlan
 
-  CarPricingAUsagePlanKey:
+  CarPricingUsagePlanKey:
     Type: 'AWS::ApiGateway::UsagePlanKey'
     Properties:
-      KeyId: !Ref CarPricingAPIGateway
+      KeyId: !Ref CarPricingApiKey
       KeyType: API_KEY
       UsagePlanId: !Ref CarPricingApiKeyUsagePlan
 
