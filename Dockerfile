@@ -3,7 +3,7 @@
 FROM public.ecr.aws/lambda/python:3.9 as base
 
 # Poetry
-RUN curl -sSL https://install.python-poetry.org | python3 - --version 1.1.12
+RUN curl -sSL https://install.python-poetry.org | python3 - --version 1.8.3
 ENV PATH /root/.local/bin:$PATH
 
 # Config
@@ -11,7 +11,7 @@ COPY poetry.lock pyproject.toml ./
 
 # Dependencies
 RUN poetry config virtualenvs.create false
-RUN poetry install --no-dev --no-interaction --no-ansi
+RUN poetry install --only main --no-interaction --no-ansi
 
 # Models
 RUN mkdir -p ./models/
