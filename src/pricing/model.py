@@ -9,11 +9,11 @@ import argparse
 import pandas as pd
 
 from loguru import logger
+from datetime import datetime
 from xgboost import XGBRegressor
 from category_encoders import TargetEncoder, BinaryEncoder
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
-from sklearn.compose import ColumnTransformer
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
 from src.config import Def
@@ -23,7 +23,7 @@ from src.data.dataset import DatasetManager
 class PricingModel:
     """Pricing Model"""
     
-    def __init__(self, dataset: DatasetManager, path: str = None) -> None:
+    def __init__(self, dataset: DatasetManager) -> None:
         """Initialize model with dataset
 
         Args:
@@ -33,10 +33,12 @@ class PricingModel:
             None
         """
         self.dataset = dataset
-        self.model_path = path if path else Def.Model.Dir.MAIN
         self.main_metric = 'mean_squared_error'
         
         self.predictor = None
+        self.model_name = None
+        self.model_path = None
+
         self.train_data = None
         self.test_data = None
         return
@@ -45,11 +47,13 @@ class PricingModel:
         """Save model at the given path
 
         Args:
-            path (str): Path to save model
+            path (str): Model path
             
+
         Returns:
             None
         """
+        # Save model
         with open(path, 'wb') as file:
             pickle.dump(self.predictor, file)
         logger.info(f'Model saved to path: {path}')
@@ -91,7 +95,10 @@ class PricingModel:
         self.predictor.fit(X=input_data, y=target_data)
 
         # Save
-        self.save(Def.Model.Dir.PATH)
+        self.model_name = datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
+        model_dir = Def.Model.Dir.MAIN if Def.Env.IS_LOCAL else Def.Model.Dir.TEMP_MAIN
+        self.model_path = os.path.join(model_dir, self.model_name)
+        self.save(path=self.model_path)
         return
 
     def eval(self) -> dict[str, float]:

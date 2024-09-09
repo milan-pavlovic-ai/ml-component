@@ -51,23 +51,21 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         dataset.split()
     
         # Train model
-        model = PricingModel(dataset=dataset, path=Def.Model.Dir.TEMP_LAMBDA)
+        model = PricingModel(dataset=dataset)
         model.train()
 
         # Eval model
         results = model.eval()
 
         # Upload model
-        timestamp = datetime.now().strftime('%Y-%m-%d_%H:%M:%S') 
-        remote_path = f'models/{timestamp}'
-        storage.upload_model(local_dir=Def.Model.Dir.TEMP_LAMBDA, remote_dir=remote_path)
+        storage.upload_model(local_path=model.model_path, remote_dir='models')
 
         # Response
         content = {}
         content['dataset'] = latest_dataset_path
-        content['model'] = remote_path
+        content['model'] = model.model_path
         content['metrics'] = results
-        storage.save_version(content=content, timestamp=timestamp)
+        storage.save_version(content=content, timestamp=model.model_name)
         
         response = {
             'statusCode': HTTPStatus.OK,

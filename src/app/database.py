@@ -190,7 +190,7 @@ class StorageS3:
         return
 
 
-    def upload_model(self, local_dir: str, remote_dir: str) -> None:
+    def upload_model(self, local_path: str, remote_dir: str) -> str:
         """Upload local model from temp directory into remote S3 directory
 
         Args:
@@ -198,53 +198,39 @@ class StorageS3:
             remote_dir (str): Remote S3 directory
             
         Returns:
-            None
+            str: Path to the uploaded model
         """
-        for root, dirs, files in os.walk(local_dir):
-
-            for single_file in files:
-                local_path = os.path.join(root, single_file)
-                relative_path = os.path.relpath(local_path, local_dir)
-                
-                s3_path = os.path.join(remote_dir, relative_path)
-
-                self.client.upload_file(local_path, self.bucket, s3_path)
-                
+        model_name = os.path.basename(local_path)
+        remote_path = os.path.join(remote_dir, model_name)
+        
+        self.client.upload_file(local_path, self.bucket, remote_path)        
         logger.info(Def.Label.Model.UPLOADED_SUCCESSFULLY)
-        return
+        
+        return remote_path
 
-    def download_model(self, remote_dir: str, local_dir: str) -> None:
-        """Download model from the remote directory into the local directory
+    def download_model(self, remote_dir: str, local_dir: str) -> str:
+        """Download the latest model file from the remote directory to the local directory.
 
         Args:
-            remote_dir (str): Remote directory on S3
-            local_dir (str): Local directory
-            
+            remote_dir (str): Remote directory on S3.
+            local_dir (str): Local directory.
+
         Returns:
-            None
+            str: Path to the latest downloaded model
         """
-        # Get latest model
-        latest_model_dir = self.get_latest_model_dir(base_path=remote_dir)
+        latest_model_file = self.find_latest_file(prefix=remote_dir)
+        if latest_model_file is None:
+            raise ValueError('No files found in the remote directory.')
         
-        # Download model
-        paginator = self.client.get_paginator('list_objects_v2')
-        pages = paginator.paginate(Bucket=self.bucket, Prefix=latest_model_dir)
+        local_path = os.path.join(local_dir, os.path.basename(latest_model_file))
+        local_dir_path = os.path.dirname(local_path)
+        if not os.path.exists(local_dir_path):
+            os.makedirs(local_dir_path)
 
-        for page in pages:
-            if 'Contents' in page:
-                for obj in page['Contents']:
-                    s3_path = obj['Key']
-                    relative_path = os.path.relpath(s3_path, latest_model_dir)
-                    local_path = os.path.join(local_dir, relative_path)
-
-                    local_dir = os.path.dirname(local_path)
-                    if not os.path.exists(local_dir):
-                        os.makedirs(local_dir)
-
-                    self.client.download_file(self.bucket, s3_path, local_path)
+        self.client.download_file(self.bucket, latest_model_file, local_path)
+        logger.info(f'{Def.Label.Model.DOWNLOADED_SUCCESSFULLY}: {local_path}')
         
-        logger.info(Def.Label.Model.DOWNLOADED_SUCCESSFULLY)
-        return
+        return local_path
 
     def get_latest_model_dir(self, base_path: str) -> str:
         """Find the latest model directory based on timestamp
@@ -268,4 +254,3 @@ class StorageS3:
         latest_dir = sorted_folders[-1]
 
         return latest_dir
-

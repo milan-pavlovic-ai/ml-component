@@ -128,8 +128,8 @@ class Def:
         class Dir:
             """Directory"""
             MAIN = os.path.join(ROOT_DIR, 'models')
-            PATH = os.path.join(MAIN, config['MODEL_PRICE'], 'model.pkl')
-            TEMP_LAMBDA = '/tmp/models'
+            PATH = os.path.join(MAIN, 'model.pkl')
+            TEMP_MAIN = '/tmp/models'
     
     class Label:
         """Labels"""

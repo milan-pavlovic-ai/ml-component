@@ -65,17 +65,17 @@ def load_model() -> PricingModel:
             return model
     
         # Check does need update
-        current_model_version = storage.get_latest_model_dir(base_path='models')
+        current_model_version = storage.find_latest_file(prefix='models')
         
         if model_version != current_model_version:
             model_version = current_model_version
             
             # Download model
-            storage.download_model(remote_dir='models', local_dir=Def.Model.Dir.TEMP_LAMBDA)
+            model_path = storage.download_model(remote_dir='models', local_dir=Def.Model.Dir.TEMP_MAIN)
             
             # Load model
             model = PricingModel(dataset=None)
-            model.load(path=Def.Model.Dir.TEMP_LAMBDA)
+            model.load(path=model_path)
     
     return model
 
