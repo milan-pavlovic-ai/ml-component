@@ -32,7 +32,7 @@ class StorageS3:
         self.region = region
         self.profile = profile
         
-        self.session = aws.Session(profile_name=self.profile) if self.profile else aws.Session()
+        self.session = aws.Session(profile_name=self.profile) if self.profile and Def.Env.IS_LOCAL else aws.Session()
         
         self.conn = self.session.resource('s3', region_name=self.region)
         self.client = self.session.client('s3', region_name=self.region)
