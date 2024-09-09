@@ -432,7 +432,7 @@
         ]
     },
     "Leather interior": {
-        "type": "categorical",
+        "type": "logical",
         "values": [
             "No",
             "Yes"
@@ -477,7 +477,7 @@
         ]
     },
     "Wheel": {
-        "type": "categorical",
+        "type": "logical",
         "values": [
             "Left wheel",
             "Right-hand drive"
@@ -515,7 +515,7 @@
         "max": 150000
     },
     "isTurbo": {
-        "type": "categorical",
+        "type": "logical",
         "values": [
             "No",
             "Yes"

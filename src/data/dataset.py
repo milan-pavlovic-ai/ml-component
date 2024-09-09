@@ -49,6 +49,7 @@ class DatasetManager:
         self.relevant_features = list(Def.Data.VALIDATOR.keys())
         self.categorical_features = [col for col, info in Def.Data.VALIDATOR.items() if info['type'] == 'categorical']
         self.numerical_features = [col for col, info in Def.Data.VALIDATOR.items() if info['type'] == 'numerical']
+        self.binary_features = [col for col, info in Def.Data.VALIDATOR.items() if info['type'] == 'logical']
         return
 
     @staticmethod
@@ -185,6 +186,8 @@ class DatasetManager:
             self.df[feature] = self.df[feature].astype(float)
 
         self.df[self.categorical_features] = self.df[self.categorical_features].astype(str)
+
+        self.df[self.binary_features] = self.df[self.binary_features].astype(str)
         return
 
     def execute_preparation(self, to_save: bool = False) -> pd.DataFrame:

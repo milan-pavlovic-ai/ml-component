@@ -4,11 +4,16 @@ import os
 import sys
 sys.path.insert(0, os.path.join(os.path.abspath(os.path.dirname(__file__)), '..', '..'))
 
+import pickle
 import argparse
 import pandas as pd
 
 from loguru import logger
-from autogluon.tabular import TabularPredictor
+from xgboost import XGBRegressor
+from category_encoders import TargetEncoder, BinaryEncoder
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.compose import ColumnTransformer
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
 from src.config import Def
@@ -45,7 +50,9 @@ class PricingModel:
         Returns:
             None
         """
-        self.predictor.save(path)
+        with open(path, 'wb') as file:
+            pickle.dump(self.predictor, file)
+        logger.info(f'Model saved to path: {path}')
         return
     
     def load(self, path: str) -> None:
@@ -57,32 +64,34 @@ class PricingModel:
         Returns:
             None
         """
-        self.predictor = TabularPredictor.load(path)
+        with open(path, 'rb') as file:
+            self.predictor = pickle.load(file)
         logger.info(f'Loaded model from path: {path}')
         return
 
     def train(self) -> None:
         """Train model"""
-        # Initialize
-        self.predictor = TabularPredictor(
-            label=self.dataset.target,
-            eval_metric=self.main_metric,
-            path=self.model_path
-        )
-        
-        # Hyper-parameters
-        hyperparameters = {
-            'GBM': {},
-            # 'XGB': {},
-            # 'CAT': {},
-            # 'NN_TORCH': {}
-        }
+        # Pipelines
+        self.predictor = Pipeline(steps=[
+            ('cat_encoder', TargetEncoder(cols=self.dataset.categorical_features)),
+            ('bin_encoder', BinaryEncoder(cols=self.dataset.binary_features)),
+            ('scaler', StandardScaler()),
+            ('estimator', XGBRegressor(
+                objective='reg:squarederror',
+                max_depth=10,
+                random_state=Def.Env.SEED,
+                verbosity=3
+            ))
+        ])
         
         # Fit predictor
-        self.predictor.fit(
-            train_data=self.dataset.train_data,
-            hyperparameters=hyperparameters
-        )
+        input_data = self.dataset.train_data.drop(columns=[self.dataset.target])
+        target_data = self.dataset.train_data[self.dataset.target]
+        
+        self.predictor.fit(X=input_data, y=target_data)
+
+        # Save
+        self.save(Def.Model.Dir.PATH)
         return
 
     def eval(self) -> dict[str, float]:
@@ -98,10 +107,12 @@ class PricingModel:
             raise ValueError(Def.Label.Model.NOT_LOADED_OR_TRAINED)
         
         # Make predictions on the test set
-        y_pred = self.predictor.predict(self.dataset.test_data)
+        input_test_data = self.dataset.test_data.drop(columns=[self.dataset.target])
+        y_true = self.dataset.test_data[self.dataset.target]
+        
+        y_pred = self.predictor.predict(input_test_data)
 
         # Calculate metrics
-        y_true = self.dataset.test_data[self.dataset.target]
         mse = mean_squared_error(y_true, y_pred)
         mae = mean_absolute_error(y_true, y_pred)
         r2 = r2_score(y_true, y_pred)
@@ -167,5 +178,5 @@ if __name__ == '__main__':
     
     # Evaluate model
     if args.eval:
-        model.load(Def.Model.Dir.MAIN)
+        model.load(Def.Model.Dir.PATH)
         model.eval()
