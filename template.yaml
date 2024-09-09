@@ -107,6 +107,32 @@ Resources:
       StageName: !Ref StageParam
       OpenApiVersion: '3.0.0'
       TracingEnabled: true
+      Auth:
+        ApiKeyRequired: true
+
+  CarPricingApiKey:
+    Type: 'AWS::ApiGateway::ApiKey'
+    Properties:
+      Enabled: true
+      StageKeys:
+        - RestApiId: !Ref CarPricingAPIGateway
+          StageName: !Ref StageParam
+
+  CarPricingApiKeyUsagePlan:
+    Type: 'AWS::ApiGateway::UsagePlan'
+    Properties:
+      ApiStages:
+        - ApiId: !Ref CarPricingAPIGateway
+          Stage: !Ref StageParam
+      Description: Usage plan for Car Pricing API
+      UsagePlanName: CarPricingUsagePlan
+
+  CarPricingAUsagePlanKey:
+    Type: 'AWS::ApiGateway::UsagePlanKey'
+    Properties:
+      KeyId: !Ref CarPricingAPIGateway
+      KeyType: API_KEY
+      UsagePlanId: !Ref CarPricingApiKeyUsagePlan
 
   CarPricingRole:
     Type: AWS::IAM::Role
