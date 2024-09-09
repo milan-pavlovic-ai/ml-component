@@ -104,7 +104,7 @@ Resources:
   CarPricingAPIGateway:
     Type: AWS::Serverless::Api
     Properties:
-      StageName: !Ref StageParam
+      StageName: !Ref StageName
       OpenApiVersion: '3.0.0'
       TracingEnabled: true
       Auth:
@@ -116,14 +116,14 @@ Resources:
       Enabled: true
       StageKeys:
         - RestApiId: !Ref CarPricingAPIGateway
-          StageName: !Ref StageParam
+          StageName: !Ref StageName
 
   CarPricingApiKeyUsagePlan:
     Type: 'AWS::ApiGateway::UsagePlan'
     Properties:
       ApiStages:
         - ApiId: !Ref CarPricingAPIGateway
-          Stage: !Ref StageParam
+          Stage: !Ref StageName
       Description: Usage plan for Car Pricing API
       UsagePlanName: CarPricingUsagePlan
 
