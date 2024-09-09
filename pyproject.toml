@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ml-component"
-version = "0.1.0"
+version = "1.0.0"
 description = "Machine Learning Component for Car Pricing"
 authors = ["Milan Pavlovic - UNS PMF"]
 
