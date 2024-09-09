@@ -131,12 +131,12 @@ class UtilityManager:
 
                 feature_info = Def.Data.VALIDATOR[feature]
 
-                if feature_info["type"] == "categorical":
+                if feature_info["type"] in ("categorical", "logical"):
                     is_valid = value in feature_info["values"]
                 
-                elif feature_info["type"] == "numerical":
+                elif feature_info["type"] in ("numerical"):
                     is_valid = (feature_info["min"] <= value <= feature_info["max"])
-                
+
                 else:
                     is_valid = False
                     

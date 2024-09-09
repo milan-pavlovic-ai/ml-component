@@ -14,7 +14,7 @@ class CarInterface(BaseModel):
     mileage: int = Field(alias="Mileage")
     fuel_type: str = Field(alias="Fuel type")
     engine_volume: float = Field(alias="Engine volume")
-    is_turbo: str = Field(alias='isTurbo')
+    is_turbo: str = Field(alias="isTurbo")
     cylinders: int = Field(alias="Cylinders")
     gear_box: str = Field(alias="Gear box type")
     drive_wheels: str = Field(alias="Drive wheels")

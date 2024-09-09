@@ -3,20 +3,23 @@ Transform: AWS::Serverless-2016-10-31
 Description: ML Component for Car Pricing
 
 Parameters:
-  BucketName:
+  BucketParam:
     Type: String
     Description: "Name of the S3 bucket that triggers the Lambda function"
-  StageName:
+
+  StageParam:
     Type: String
     Default: cloud
     Description: "Environment stage name for API"
+
 
 Resources:
 
   CarPricingBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Ref BucketName
+      BucketName: !Ref BucketParam
+
 
   CarPricingInferenceFunction:
     Type: AWS::Serverless::Function
@@ -101,10 +104,11 @@ Resources:
       DockerContext: ./
       Dockerfile: Dockerfile
 
+
   CarPricingAPIGateway:
     Type: AWS::Serverless::Api
     Properties:
-      StageName: !Ref StageName
+      StageName: !Ref StageParam
       OpenApiVersion: '3.0.0'
       TracingEnabled: true
       Auth:
@@ -116,23 +120,23 @@ Resources:
       Enabled: true
       StageKeys:
         - RestApiId: !Ref CarPricingAPIGateway
-          StageName: !Ref StageName
+          StageName: !Ref StageParam
 
-  CarPricingApiKeyUsagePlan:
+  CarPricingApiUsagePlan:
     Type: 'AWS::ApiGateway::UsagePlan'
     Properties:
+      UsagePlanName: CarPricingUsagePlan
       ApiStages:
         - ApiId: !Ref CarPricingAPIGateway
-          Stage: !Ref StageName
-      Description: Usage plan for Car Pricing API
-      UsagePlanName: CarPricingUsagePlan
+          Stage: !Ref StageParam
 
   CarPricingUsagePlanKey:
     Type: 'AWS::ApiGateway::UsagePlanKey'
     Properties:
       KeyId: !Ref CarPricingApiKey
       KeyType: API_KEY
-      UsagePlanId: !Ref CarPricingApiKeyUsagePlan
+      UsagePlanId: !Ref CarPricingApiUsagePlan
+
 
   CarPricingRole:
     Type: AWS::IAM::Role

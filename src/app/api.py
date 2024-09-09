@@ -61,7 +61,7 @@ def load_model() -> PricingModel:
         # Local model
         if Def.Env.IS_LOCAL:
             model = PricingModel(dataset=None)
-            model.load(path=Def.Model.Dir.MAIN)
+            model.load(path=Def.Model.Dir.PATH)
             return model
     
         # Check does need update
