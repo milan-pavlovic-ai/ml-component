@@ -35,6 +35,7 @@ class PricingModel:
         self.dataset = dataset
         self.main_metric = 'mean_squared_error'
         
+        self.version = None
         self.predictor = None
         self.model_name = None
         self.model_path = None
@@ -53,6 +54,9 @@ class PricingModel:
         Returns:
             None
         """
+        # Ensure path
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+
         # Save model
         with open(path, 'wb') as file:
             pickle.dump(self.predictor, file)
@@ -84,7 +88,7 @@ class PricingModel:
                 objective='reg:squarederror',
                 max_depth=10,
                 random_state=Def.Env.SEED,
-                verbosity=3
+                verbosity=0
             ))
         ])
         
@@ -95,7 +99,8 @@ class PricingModel:
         self.predictor.fit(X=input_data, y=target_data)
 
         # Save
-        self.model_name = datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
+        self.version = datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
+        self.model_name = f"model_{self.version}.pkl"
         model_dir = Def.Model.Dir.MAIN if Def.Env.IS_LOCAL else Def.Model.Dir.TEMP_MAIN
         self.model_path = os.path.join(model_dir, self.model_name)
         self.save(path=self.model_path)

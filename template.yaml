@@ -66,7 +66,7 @@ Resources:
           Type: S3
           Properties:
             Bucket: !Ref CarPricingBucket
-            Events: s3:ObjectCreated:Put
+            Events: s3:ObjectCreated:*
             Filter:
               S3Key:
                 Rules:
@@ -93,7 +93,7 @@ Resources:
           Type: S3
           Properties:
             Bucket: !Ref CarPricingBucket
-            Events: s3:ObjectCreated:Put
+            Events: s3:ObjectCreated:*
             Filter:
               S3Key:
                 Rules:

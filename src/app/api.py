@@ -160,7 +160,10 @@ def car_pricing(request: CarInterface) -> JSONResponse:
         predictions = model.predict(input_data=dataset.df)
         
         # Create response
-        content = {'carPrice': predictions.tolist()}
+        content = {
+            'carPrice': predictions.tolist(),
+            'modelVersion': model_version
+        }
         response = UtilityManager.Response.create_json_response(content=content)
     
     except ValueError as ex:

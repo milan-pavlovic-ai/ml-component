@@ -5,11 +5,11 @@ import sys
 sys.path.insert(0, os.path.join(os.path.abspath(os.path.dirname(__file__)), '..', '..'))
 
 import json
+import traceback
 
 from loguru import logger
 from typing import Dict, Any
 from http import HTTPStatus
-from datetime import datetime
 
 from src.config import Def
 from src.app.database import StorageS3
@@ -65,7 +65,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         content['dataset'] = latest_dataset_path
         content['model'] = model.model_path
         content['metrics'] = results
-        storage.save_version(content=content, timestamp=model.model_name)
+        storage.save_version(content=content, timestamp=model.version)
         
         response = {
             'statusCode': HTTPStatus.OK,
@@ -74,6 +74,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         
     except Exception as ex:
         logger.error(str(ex))
+        logger.error(traceback.format_exc())
         response = {
             'statusCode': HTTPStatus.INTERNAL_SERVER_ERROR,
             'body': json.dumps(Def.Label.DataProcessor.PROCESSED_FAILED)
