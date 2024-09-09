@@ -21,7 +21,8 @@ ROOT_DIR := $(abspath $(dir $(lastword $(MAKEFILE_LIST)))/)
 PROJECT_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 PROJECT_NAME := $(notdir $(ROOT_DIR))
 BUCKET := $(S3_BUCKET)
-PROFILE := $(ENVIRONMENT)
+REGION := $(AWS_REGION)
+PROFILE := $(AWS_PROFILE)
 PYTHON_INTERPRETER := python3.9
 
 #################################################################################
@@ -124,15 +125,15 @@ pull_models:
 ##########
 
 ## Build SAM docker image
-build: cls clean active
+build: cls active
 	@echo "\nBuild SAM docker image"
-	sam validate
-	sam build --use-container
+	sam validate --profile $(PROFILE) --region $(REGION)
+	sam build --use-container --profile $(PROFILE) --region $(REGION)
 
 ## Deploy SAM docker image to AWS
 deploy: build
 	@echo "\nDeploy docker image to AWS"
-	sam deploy --guided --capabilities CAPABILITY_NAMED_IAM --profile $(PROFILE) --parameter-overrides "BucketName=\"$(BUCKET)\"" --stack-name "car-pricing" --config-file "samconfig.toml" --config-env $(PROFILE) --confirm-changeset
+	sam deploy --guided --capabilities CAPABILITY_NAMED_IAM --profile $(PROFILE) --region $(REGION) --parameter-overrides "BucketName=\"$(BUCKET)\"" --stack-name "car-pricing" --config-file "samconfig.toml" --config-env $(PROFILE) --confirm-changeset
 
 ## Clean all docker images, containers, and volumes
 prune: cls stop
