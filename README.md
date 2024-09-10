@@ -108,7 +108,26 @@ All resources are defined using an infrastructure-as-code template with the AWS 
     Example using curl:
 
     ```bash
-    curl -H "x-api-key: your-aws-api-key" http://your-cloud-api-endpoint/pricing
+    curl --location 'https://<your-api-id>.execute-api.<your-aws-region>.amazonaws.com/cloud/pricing' \
+    --header 'x-api-key: <your-api-key>' \
+    --header 'Content-Type: application/json' \
+    --data '{
+        "Manufacturer": "BMW",
+        "Model": "530",
+        "Prod. year": 2017,
+        "Category": "Sedan",
+        "Mileage": 42000,
+        "Fuel type": "Petrol",
+        "Engine volume": 3.0,
+        "isTurbo": "Yes",
+        "Cylinders": 6,
+        "Gear box type": "Tiptronic",
+        "Drive wheels": "Rear",
+        "Wheel": "Left wheel",
+        "Color": "Silver",
+        "Airbags": 12,
+        "Leather interior": "Yes"
+    }'
     ```
 
 ## Deploy Changes
