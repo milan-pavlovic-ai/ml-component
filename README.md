@@ -1,5 +1,5 @@
 # ml-component
-Demonstrates a component-based approach for developing machine learning systems.
+Demonstrates a component-based approach for developing machine learning systems trough a car pricing use case.
 
 ## Introduction
 
