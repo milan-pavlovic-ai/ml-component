@@ -1,5 +1,5 @@
 # ml-component
-Machine Learning Component for Car Pricing
+Demonstrates a component-based approach for developing machine learning systems.
 
 ## Introduction
 
