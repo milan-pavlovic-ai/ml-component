@@ -42,6 +42,10 @@ All resources are defined using an infrastructure-as-code template with the AWS 
 2. **Data Processing Lambda**: Preprocesses the latest data and outputs the processed file to the bucket. Triggered by file uploads in the raw data folder.
 3. **Training Lambda**: It loads the preprocessed dataset, trains, evaluates the model, and saves the model with versioning. Triggered by uploads of processed datasets. 
 
+### Architecture Diagram
+
+![Alt text](data/temp/ml-component-architecture.png)
+
 ## Setup
 
 ### Prerequisites
