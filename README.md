@@ -21,10 +21,11 @@ Components can be tested individually, minimizing errors and allowing for rapid 
 
 - **Lambda Execution Limit**: AWS Lambda's 15-minute execution limit may restrict model training. Solutions include using AWS Batch or EC2 instances for longer tasks.
 
-- **VPC Requirements**: Deploying within a VPC improves security by isolating resources and controlling network access.
-
 - **Prediction Constraints**: The current setup supports single-car predictions. To handle multiple cars, either batch processing services or asynchronous Lambda invocations can be used, with results aggregated as needed.
 
+- **VPC Requirements**: Deploying within a VPC improves security by isolating resources and controlling network access.
+
+- **Incomplete Training endpoint**: The idea of training job creation is to copy the latest dataset from an external S3 bucket. In that case, a bucket policy and a VPC endpoint for S3 will be required.
 
 ## API Endpoints
 
