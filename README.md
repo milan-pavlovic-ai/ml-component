@@ -25,7 +25,7 @@ Components can be tested individually, minimizing errors and allowing for rapid 
 
 - **VPC Requirements**: Deploying within a VPC improves security by isolating resources and controlling network access.
 
-- **Incomplete Training endpoint**: The idea of training job creation is to copy the latest dataset from an external S3 bucket. In that case, a bucket policy and a VPC endpoint for S3 will be required.
+- **Incomplete Training endpoint**: The idea of training job creation is to copy the latest dataset from an external S3 bucket. In that case, a bucket policy and a VPC endpoint for S3 will be required. In the current implementation, this is simulated.
 
 ## API Endpoints
 
